@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Sheet → PDF</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #1b1b1a;
+    --surface: #242322;
+    --surface-2: #2c2b29;
+    --border: #3a3836;
+    --text: #f2ede4;
+    --text-dim: #a39c8f;
+    --accent: #e8a33d;
+    --accent-dim: #6b5024;
+    --danger: #c9614a;
+  }
+  *{ box-sizing: border-box; }
+  html, body{
+    margin:0; padding:0; min-height:100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .mono{ font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace; }
+
+  header{
+    padding: 40px 24px 20px;
+    max-width: 920px;
+    margin: 0 auto;
+  }
+  .eyebrow{
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin: 0 0 10px;
+  }
+  h1{
+    font-size: 30px;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+  }
+  header p{
+    color: var(--text-dim);
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 0;
+    max-width: 60ch;
+  }
+  kbd{
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 12.5px;
+    color: var(--text);
+  }
+
+  main{
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 8px 24px 140px;
+  }
+
+  #dropzone{
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 34px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+    background: var(--surface);
+  }
+  #dropzone:hover{ border-color: var(--accent-dim); }
+  #dropzone.dragover{
+    border-color: var(--accent);
+    background: rgba(232,163,61,0.06);
+  }
+  #dropzone .icon{
+    width: 34px; height: 34px;
+    margin: 0 auto 12px;
+    color: var(--accent);
+  }
+  #dropzone .headline{
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  #dropzone .sub{
+    font-size: 13px;
+    color: var(--text-dim);
+    margin: 0;
+  }
+
+  .section-label{
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 34px 0 14px;
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .section-label .count{
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    color: var(--accent);
+  }
+  .section-label .rule{
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  #empty-state{
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    font-size: 13.5px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    border-style: dashed;
+  }
+
+  #grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 18px;
+  }
+
+  .frame{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .frame:active{ cursor: grabbing; }
+  .frame.dragging{ opacity: 0.35; }
+  .frame.drag-over{
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .sprockets{
+    height: 11px;
+    background-color: var(--border);
+    background-image: radial-gradient(circle at 7px 5.5px, var(--bg) 3.4px, transparent 3.6px);
+    background-size: 14px 11px;
+    background-repeat: repeat-x;
+  }
+  .frame-img-wrap{
+    aspect-ratio: 1 / 1;
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .frame-img-wrap img{
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+  }
+  .frame-footer{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+  }
+  .frame-index{
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .frame-remove{
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .frame-remove:hover{
+    color: var(--danger);
+    background: rgba(201,97,74,0.12);
+  }
+
+  footer{
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: rgba(27,27,26,0.92);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid var(--border);
+    padding: 14px 24px;
+  }
+  .footer-inner{
+    max-width: 920px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .controls{
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .status{
+    font-size: 13px;
+    color: var(--text-dim);
+    flex: 1;
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  button.action{
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 7px;
+    padding: 11px 20px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: opacity .12s ease, transform .05s ease;
+  }
+  button.action:active{ transform: translateY(1px); }
+  button.action:disabled{ opacity: 0.4; cursor: not-allowed; }
+  .btn-primary{
+    background: var(--accent);
+    color: #211a0d;
+  }
+  .btn-primary:hover:not(:disabled){ opacity: 0.9; }
+  .btn-secondary{
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-dim);
+  }
+  .btn-secondary:hover:not(:disabled){
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  #file-input{ display: none; }
+
+  .page-mode{
+    display: flex;
+    gap: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 3px;
+  }
+  .page-mode label{
+    font-size: 12.5px;
+    color: var(--text-dim);
+    padding: 7px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .page-mode label svg{
+    flex-shrink: 0;
+    color: inherit;
+  }
+  .page-mode input{
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .page-mode label.checked{
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Contact sheet → PDF</p>
+  <h1>Cole suas imagens</h1>
+  <p>Pressione <kbd>Ctrl</kbd>+<kbd>V</kbd> (ou <kbd>Cmd</kbd>+<kbd>V</kbd> no Mac) em qualquer lugar desta página para colar uma imagem da área de transferência. Também aceita arrastar arquivos ou selecionar pela pasta. O PDF é gerado na mesma ordem em que as imagens forem adicionadas — arraste um quadro para reordenar.</p>
+</header>
+
+<main>
+  <div id="dropzone">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <circle cx="8.5" cy="8.5" r="1.6"/>
+      <path d="M21 15l-5-5-9 9"/>
+    </svg>
+    <p class="headline">Cole, arraste ou clique aqui</p>
+    <p class="sub">PNG, JPG, WEBP — quantas imagens quiser</p>
+  </div>
+
+  <input type="file" id="file-input" accept="image/*" multiple>
+
+  <div class="section-label">
+    <span>Imagens</span>
+    <span class="count mono" id="count-label">0</span>
+    <span class="rule"></span>
+  </div>
+
+  <div id="empty-state">Nenhuma imagem ainda. Cole (Ctrl+V), arraste ou selecione um arquivo para começar.</div>
+  <div id="grid" style="display:none;"></div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span class="status" id="status-label"></span>
+    <div class="controls">
+      <div class="page-mode" id="page-mode">
+        <label class="checked"><input type="radio" name="pageMode" value="fit" checked>Ajustar à imagem</label>
+        <label><input type="radio" name="pageMode" value="a4">Papel A4</label>
+      </div>
+      <div class="page-mode" id="orientation-mode" style="display:none;">
+        <label class="checked">
+          <input type="radio" name="orientation" value="auto" checked>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3">
+            <rect x="2" y="2" width="7" height="10" rx="1" opacity="0.5"/>
+            <rect x="7" y="7" width="9" height="6" rx="1"/>
+          </svg>
+          Automática
+        </label>
+        <label>
+          <input type="radio" name="orientation" value="portrait">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="4" y="1" width="8" height="14" rx="1.2"/>
+          </svg>
+          Retrato
+        </label>
+        <label>
+          <input type="radio" name="orientation" value="landscape">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="1" y="4" width="14" height="8" rx="1.2"/>
+          </svg>
+          Paisagem
+        </label>
+      </div>
+    </div>
+    <button class="action btn-secondary" id="btn-clear">Limpar tudo</button>
+    <button class="action btn-primary" id="btn-generate" disabled>Gerar PDF</button>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+  const grid = document.getElementById('grid');
+  const emptyState = document.getElementById('empty-state');
+  const countLabel = document.getElementById('count-label');
+  const statusLabel = document.getElementById('status-label');
+  const btnGenerate = document.getElementById('btn-generate');
+  const btnClear = document.getElementById('btn-clear');
+
+  // images: array of { id, dataUrl, width, height }
+  let images = [];
+  let dragSrcIndex = null;
+
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function setStatus(msg, timeout){
+    statusLabel.textContent = msg || '';
+    if (timeout){
+      setTimeout(() => { if (statusLabel.textContent === msg) statusLabel.textContent = ''; }, timeout);
+    }
+  }
+
+  function render(){
+    countLabel.textContent = images.length;
+    btnGenerate.disabled = images.length === 0;
+    btnClear.disabled = images.length === 0;
+
+    if (images.length === 0){
+      emptyState.style.display = 'block';
+      grid.style.display = 'none';
+      grid.innerHTML = '';
+      return;
+    }
+    emptyState.style.display = 'none';
+    grid.style.display = 'grid';
+    grid.innerHTML = '';
+
+    images.forEach((img, index) => {
+      const frame = document.createElement('div');
+      frame.className = 'frame';
+      frame.draggable = true;
+      frame.dataset.index = index;
+
+      const topSprockets = document.createElement('div');
+      topSprockets.className = 'sprockets';
+
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'frame-img-wrap';
+      const imEl = document.createElement('img');
+      imEl.src = img.dataUrl;
+      imEl.alt = 'Imagem ' + (index + 1);
+      imgWrap.appendChild(imEl);
+
+      const bottomSprockets = document.createElement('div');
+      bottomSprockets.className = 'sprockets';
+
+      const frameFooter = document.createElement('div');
+      frameFooter.className = 'frame-footer';
+      const idx = document.createElement('span');
+      idx.className = 'frame-index';
+      idx.textContent = '#' + String(index + 1).padStart(2, '0');
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'frame-remove';
+      removeBtn.title = 'Remover';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        images.splice(index, 1);
+        render();
+      });
+      frameFooter.appendChild(idx);
+      frameFooter.appendChild(removeBtn);
+
+      frame.appendChild(topSprockets);
+      frame.appendChild(imgWrap);
+      frame.appendChild(bottomSprockets);
+      frame.appendChild(frameFooter);
+
+      frame.addEventListener('dragstart', (e) => {
+        dragSrcIndex = index;
+        frame.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      frame.addEventListener('dragend', () => {
+        frame.classList.remove('dragging');
+        document.querySelectorAll('.frame').forEach(f => f.classList.remove('drag-over'));
+      });
+      frame.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        frame.classList.add('drag-over');
+      });
+      frame.addEventListener('dragleave', () => {
+        frame.classList.remove('drag-over');
+      });
+      frame.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        frame.classList.remove('drag-over');
+        const targetIndex = index;
+        if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
+        const [moved] = images.splice(dragSrcIndex, 1);
+        images.splice(targetIndex, 0, moved);
+        dragSrcIndex = null;
+        render();
+      });
+
+      grid.appendChild(frame);
+    });
+  }
+
+  // Convert a File/Blob into a flattened JPEG data URL (white background, keeps natural size)
+  function fileToDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          resolve({
+            dataUrl: canvas.toDataURL('image/jpeg', 0.92),
+            width: canvas.width,
+            height: canvas.height
+          });
+        };
+        img.onerror = () => reject(new Error('Não foi possível carregar a imagem.'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('Falha ao ler o arquivo.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Adds files in order, one at a time, so the resulting array order matches input order
+  async function addFiles(fileList){
+    const files = Array.from(fileList).filter(f => f.type && f.type.startsWith('image/'));
+    if (files.length === 0) return;
+    for (const file of files){
+      try{
+        const result = await fileToDataUrl(file);
+        images.push({ id: uid(), ...result });
+        render();
+      } catch(err){
+        console.error(err);
+        setStatus('Erro ao processar uma imagem.', 3000);
+      }
+    }
+  }
+
+  // Paste anywhere on the page
+  document.addEventListener('paste', (e) => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    const files = [];
+    for (const item of items){
+      if (item.kind === 'file' && item.type.startsWith('image/')){
+        const f = item.getAsFile();
+        if (f) files.push(f);
+      }
+    }
+    if (files.length){
+      e.preventDefault();
+      addFiles(files);
+      setStatus('Imagem colada.', 1500);
+    }
+  });
+
+  // Drag & drop
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+  });
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+      addFiles(e.dataTransfer.files);
+    }
+  });
+
+  // Click to browse
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    addFiles(e.target.files);
+    fileInput.value = '';
+  });
+
+  // Clear all
+  btnClear.addEventListener('click', () => {
+    if (images.length === 0) return;
+    if (confirm('Remover todas as imagens?')){
+      images = [];
+      render();
+    }
+  });
+
+  // Page-mode / orientation toggle visual state
+  const pageModeGroup = document.getElementById('page-mode');
+  const orientationGroup = document.getElementById('orientation-mode');
+
+  function refreshToggleStyles(group){
+    group.querySelectorAll('label').forEach(l => {
+      l.classList.toggle('checked', l.querySelector('input').checked);
+    });
+  }
+  pageModeGroup.addEventListener('change', () => {
+    refreshToggleStyles(pageModeGroup);
+    const mode = document.querySelector('input[name="pageMode"]:checked').value;
+    orientationGroup.style.display = (mode === 'a4') ? 'flex' : 'none';
+  });
+  orientationGroup.addEventListener('change', () => refreshToggleStyles(orientationGroup));
+
+  function getOrientation(w, h){
+    return w >= h ? 'landscape' : 'portrait';
+  }
+
+  // Generate PDF
+  btnGenerate.addEventListener('click', () => {
+    if (images.length === 0) return;
+    btnGenerate.disabled = true;
+    setStatus('Gerando PDF…');
+    try{
+      const mode = document.querySelector('input[name="pageMode"]:checked').value;
+      const forcedOrientation = document.querySelector('input[name="orientation"]:checked').value; // auto | portrait | landscape
+      const { jsPDF } = window.jspdf;
+      let pdf;
+      const FIT_LONG_EDGE = 842; // pt, tamanho longo de referência, na proporção da própria imagem
+      const A4_MARGIN = 24;
+
+      images.forEach((img, i) => {
+        if (mode === 'fit'){
+          // Página customizada com a mesma proporção da imagem: preenche 100%, sem faixas nem corte.
+          const scale = FIT_LONG_EDGE / Math.max(img.width, img.height);
+          const pw = img.width * scale;
+          const ph = img.height * scale;
+          const orientation = pw >= ph ? 'landscape' : 'portrait';
+          if (i === 0){
+            pdf = new jsPDF({ unit: 'pt', format: [pw, ph], orientation });
+          } else {
+            pdf.addPage([pw, ph], orientation);
+          }
+          pdf.addImage(img.dataUrl, 'JPEG', 0, 0, pw, ph);
+        } else {
+          // Papel A4: orientação automática (por imagem) ou forçada, conforme escolhido.
+          const orientation = forcedOrientation === 'auto'
+            ? getOrientation(img.width, img.height)
+            : forcedOrientation;
+          if (i === 0){
+            pdf = new jsPDF({ unit: 'pt', format: 'a4', orientation });
+          } else {
+            pdf.addPage('a4', orientation);
+          }
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const maxW = pageWidth - A4_MARGIN * 2;
+          const maxH = pageHeight - A4_MARGIN * 2;
+          const ratio = Math.min(maxW / img.width, maxH / img.height);
+          const w = img.width * ratio;
+          const h = img.height * ratio;
+          const x = (pageWidth - w) / 2;
+          const y = (pageHeight - h) / 2;
+          pdf.addImage(img.dataUrl, 'JPEG', x, y, w, h);
+        }
+      });
+
+      pdf.save('imagens.pdf');
+      setStatus('PDF gerado — ' + images.length + ' página(s).', 4000);
+    } catch(err){
+      console.error(err);
+      setStatus('Erro ao gerar o PDF.', 4000);
+    } finally {
+      btnGenerate.disabled = images.length === 0;
+    }
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
