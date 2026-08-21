@@ -1,6 +1,7 @@
 # Sequence Image to PDF
  
 Página HTML única (sem instalação, sem backend) para colar imagens da área de transferência e gerar um PDF com elas, na mesma ordem em que foram adicionadas.
+https://paralhama.github.io/Sequence-Images-to-PDF/
  
 ## Funcionalidades
  
