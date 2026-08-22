@@ -31,26 +31,20 @@
     max-width: 920px;
     margin: 0 auto;
   }
-  .eyebrow{
-    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
-    font-size: 12px;
-    letter-spacing: 0.18em;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin: 0 0 10px;
-  }
   h1{
     font-size: 30px;
-    margin: 0 0 8px;
+    margin: 0 0 25px;
     letter-spacing: -0.01em;
     font-weight: 700;
+	text-align: center;
+	color: var(--accent);
   }
   header p{
     color: var(--text-dim);
     font-size: 14.5px;
     line-height: 1.55;
     margin: 0;
-    max-width: 60ch;
+	text-align: center;
   }
   kbd{
     font-family: "SFMono-Regular", Menlo, Consolas, monospace;
@@ -295,9 +289,9 @@
 <body>
 
 <header>
-  <p class="eyebrow">Sequence Images to PDF</p>
-  <h1>Cole suas imagens</h1>
-  <p>Pressione <kbd>Ctrl</kbd>+<kbd>V</kbd> (ou <kbd>Cmd</kbd>+<kbd>V</kbd> no Mac) em qualquer lugar desta página para colar uma imagem da área de transferência. Também aceita arrastar arquivos ou selecionar pela pasta. O PDF é gerado na mesma ordem em que as imagens forem adicionadas — arraste um quadro para reordenar.</p>
+  <h1>Sequence Images to PDF</h1>
+  <p>Pressione <kbd>Ctrl</kbd>+<kbd>V</kbd> (ou <kbd>Cmd</kbd>+<kbd>V</kbd> no Mac) em qualquer lugar desta página para colar uma imagem da área de transferência. <br><br>O PDF será gerado na mesma ordem em que as imagens forem adicionadas.
+  <br>Você Também pode mover/arrastar as imagens na timeline para reordenar a sequencia.</p>
 </header>
 
 <main>
@@ -307,8 +301,8 @@
       <circle cx="8.5" cy="8.5" r="1.6"/>
       <path d="M21 15l-5-5-9 9"/>
     </svg>
-    <p class="headline">Cole, arraste ou clique aqui</p>
-    <p class="sub">PNG, JPG, WEBP — quantas imagens quiser</p>
+    <p class="headline">Cole, arraste ou clique aqui para selecionar uma imagem de uma pasta especifica.</p>
+    <p class="sub">PNG, JPG, WEBP e quantas imagens quiser</p>
   </div>
 
   <input type="file" id="file-input" accept="image/*" multiple>
@@ -319,7 +313,7 @@
     <span class="rule"></span>
   </div>
 
-  <div id="empty-state">Nenhuma imagem ainda. Cole (Ctrl+V), arraste ou selecione um arquivo para começar.</div>
+  <div id="empty-state">Nenhuma imagem adicionada. Cole (Ctrl+V), arraste ou selecione uma imagem para começar.</div>
   <div id="grid" style="display:none;"></div>
 </main>
 
@@ -639,7 +633,7 @@
         }
       });
 
-      pdf.save('imagens.pdf');
+      pdf.save('Seu PDF.pdf');
       setStatus('PDF gerado — ' + images.length + ' página(s).', 4000);
     } catch(err){
       console.error(err);
